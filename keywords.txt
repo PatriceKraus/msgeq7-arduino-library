@@ -1,0 +1,14 @@
+#######################################
+# Syntax Coloring Map For MSGEQ7-Library
+#######################################
+# Class
+#######################################
+
+msgeq7	KEYWORD1
+
+#######################################
+# Methods and Functions
+#######################################
+
+readFrequencies	KEYWORD2
+getFrequency		KEYWORD2
