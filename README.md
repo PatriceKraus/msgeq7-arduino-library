@@ -1,4 +1,4 @@
-# msgeq7-arduino-library
+# msgeq7lib
 A minimalistic  MSGEQ7 spectrum analyzer library. Read the frequencies of the MSGEQ7-IC with your arduino.
 
 Installation Guide:
