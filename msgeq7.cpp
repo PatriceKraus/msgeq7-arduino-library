@@ -6,6 +6,8 @@ msgeq7::msgeq7(byte strobePort ,byte resetPort,byte inputPort)
   this->msg7ResetPort = resetPort;
   this->msg7AnalogInputPort = inputPort;
   this->isInitialized = false;
+  this->isFiltered = false;
+  this->numberOfFrequencies = 7;
 
   pinMode(msg7ResetPort, OUTPUT);
   pinMode(msg7StrobePort, OUTPUT);
@@ -15,6 +17,17 @@ msgeq7::msgeq7(byte strobePort ,byte resetPort,byte inputPort)
   {
     frequencyValue[i] = 0;
   }
+}
+
+byte msgeq7::getNumberOfFrequencies()
+{
+  return numberOfFrequencies;
+}
+
+void msgeq7::setNumberOfFrequencies(byte newCount)
+{
+  if(newCount <= maxNumberOfFrequencies && newCount >= minNumberOfFrequencies)
+    numberOfFrequencies = newCount;
 }
 
 void msgeq7::readFrequencies()
@@ -28,6 +41,8 @@ void msgeq7::readFrequencies()
 
   if(!isInitialized)
     isInitialized = true;
+
+  isFiltered = false;
 }
 
 int msgeq7::getFrequency(byte frequencyNumber)
@@ -40,6 +55,44 @@ int msgeq7::getFrequency(byte frequencyNumber)
   {
     return 0;
   }
+}
+
+double msgeq7::getFrequencyVoltage(byte frequencyNumber)
+{
+  return (double)frequencyValue[frequencyNumber] * 5 / 1023;
+}
+
+int msgeq7::getVolume()
+{
+  int vol = frequencyValue[0];
+  for(int i = 1; i< numberOfFrequencies;i++)
+    vol += frequencyValue[i];
+
+  return vol/numberOfFrequencies;
+}
+
+void msgeq7::filter()
+{
+  int maxValue = frequencyValue[0];
+  int minValue = frequencyValue[0];
+  for (int i = 1; i < numberOfFrequencies; i++)
+  {
+    maxValue = max(maxValue, frequencyValue[i]);
+    minValue = min(minValue, frequencyValue[i]);
+  }
+
+  if (minValue < minFrequencyValue || maxValue > maxFrequencyValue)
+  {
+    for (int i = 0; i < numberOfFrequencies; i++)
+    {
+      if (frequencyValue[i] < minFrequencyValue)
+        frequencyValue[i] = 0;
+
+      if (frequencyValue[i] > maxFrequencyValue)
+        frequencyValue[i] = maxFrequencyValue;
+    }
+  }
+  isFiltered = true;
 }
 
 void msgeq7::reset()
