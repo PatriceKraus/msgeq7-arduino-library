@@ -11,6 +11,8 @@ msgeq7 myMsgeq7 = msgeq7(strobe,reset,input);
 void setup()
 {
   Serial.begin(9600);
+  myMsgeq7.setFilterProgramm(1); // Use Filter if you want. At the moment, just one Filter.
+  //myMsgeq7.setFilterProgramm(0); // disable Filter
 }
 
 void loop()

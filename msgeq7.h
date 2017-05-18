@@ -12,6 +12,8 @@
 #define maxNumberOfFrequencies 7
 #define minNumberOfFrequencies 1
 
+#define floatingAverageLenght 10
+
 #include <Arduino.h>
 
 class msgeq7
@@ -21,26 +23,32 @@ private:
       byte msg7AnalogInputPort;
       byte msg7ResetPort;
       byte msg7StrobePort;
+      byte index;
+      int diffValueForExpFloatAvg;
+
+      byte currentlyFilterProgramm;
+
       boolean isInitialized;
       boolean isFiltered;
-      int frequencyValue[maxNumberOfFrequencies];
+      int frequencyValue[floatingAverageLenght][maxNumberOfFrequencies];
 
 
       void reset();
       void measureFrequency(byte frequencyNumber);
       void chanceFrequency();
+      void filter();
 
 public:
     msgeq7(byte strobePort ,byte resetPort,byte inputPort);
 
     void readFrequencies();
-    void filter();
+
     int getFrequency(byte frequencyNumber);
     int getFrequency(String frequency);
     double getFrequencyVoltage(byte frequencyNumber);
     int getVolume();
     byte getNumberOfFrequencies();
     void setNumberOfFrequencies(byte newCount);
-
+    void setFilterProgramm(byte number);
 };
 #endif

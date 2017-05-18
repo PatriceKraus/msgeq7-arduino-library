@@ -8,20 +8,33 @@ msgeq7::msgeq7(byte strobePort ,byte resetPort,byte inputPort)
   this->isInitialized = false;
   this->isFiltered = false;
   this->numberOfFrequencies = 7;
+  this->currentlyFilterProgramm = 0;
+  this->diffValueForExpFloatAvg = 0;
+  this->index = 0;
+
 
   pinMode(msg7ResetPort, OUTPUT);
   pinMode(msg7StrobePort, OUTPUT);
   pinMode(msg7AnalogInputPort, INPUT);
 
-  for (size_t i = 0; i < numberOfFrequencies; i++)
+  for (size_t j = 0; j < floatingAverageLenght; j++)
   {
-    frequencyValue[i] = 0;
+    for (size_t i = 0; i < numberOfFrequencies; i++)
+    {
+      frequencyValue[j][i] = 0;
+    }
+    this->diffValueForExpFloatAvg += floatingAverageLenght-j;
   }
 }
 
 byte msgeq7::getNumberOfFrequencies()
 {
   return numberOfFrequencies;
+}
+
+void msgeq7::setFilterProgramm(byte number)
+{
+  currentlyFilterProgramm = number;
 }
 
 void msgeq7::setNumberOfFrequencies(byte newCount)
@@ -32,24 +45,27 @@ void msgeq7::setNumberOfFrequencies(byte newCount)
 
 void msgeq7::readFrequencies()
 {
+  isFiltered = false;
+  if(currentlyFilterProgramm != 0)
+    index = (index+1) % floatingAverageLenght;
+
   reset();
   for (int i = 0; i < numberOfFrequencies; i++)
   {
     measureFrequency(i);
     chanceFrequency();
   }
+  filter();
 
   if(!isInitialized)
     isInitialized = true;
-
-  isFiltered = false;
 }
 
 int msgeq7::getFrequency(byte frequencyNumber)
 {
   if(isInitialized)
   {
-    return frequencyValue[frequencyNumber];
+    return frequencyValue[index][frequencyNumber];
   }
   else
   {
@@ -59,39 +75,60 @@ int msgeq7::getFrequency(byte frequencyNumber)
 
 double msgeq7::getFrequencyVoltage(byte frequencyNumber)
 {
-  return (double)frequencyValue[frequencyNumber] * 5 / 1023;
+  return (double)frequencyValue[index][frequencyNumber] * 5 / 1023;
 }
 
 int msgeq7::getVolume()
 {
-  int vol = frequencyValue[0];
+  int vol = frequencyValue[index][0];
   for(int i = 1; i< numberOfFrequencies;i++)
-    vol += frequencyValue[i];
+    vol += frequencyValue[index][i];
 
   return vol/numberOfFrequencies;
 }
 
 void msgeq7::filter()
 {
-  int maxValue = frequencyValue[0];
-  int minValue = frequencyValue[0];
-  for (int i = 1; i < numberOfFrequencies; i++)
-  {
-    maxValue = max(maxValue, frequencyValue[i]);
-    minValue = min(minValue, frequencyValue[i]);
-  }
 
-  if (minValue < minFrequencyValue || maxValue > maxFrequencyValue)
+/*
+  for (int i = 0; i < numberOfFrequencies; i++)
   {
+    if (frequencyValue[index][i] < minFrequencyValue)
+      frequencyValue[index][i] = 0;
+
+    if (frequencyValue[index][i] > maxFrequencyValue)
+      frequencyValue[index][i] = maxFrequencyValue;
+  }
+*/
+    switch(currentlyFilterProgramm)
+    {
+        case 1: //exponential floating average
+          for(int i = 0; i< numberOfFrequencies;i++)
+          {
+            int tmp =0;
+            for (size_t j = 1; j < floatingAverageLenght; j++)
+            {
+             tmp += frequencyValue[(index-j)%floatingAverageLenght][i]*(floatingAverageLenght-j);
+            }
+            frequencyValue[index][i] = (tmp+ (frequencyValue[index][i]*floatingAverageLenght))/diffValueForExpFloatAvg;
+          }
+        break;
+        default: //Programm Zero, don't manipulate the values
+        break;
+
+    }
+
     for (int i = 0; i < numberOfFrequencies; i++)
     {
-      if (frequencyValue[i] < minFrequencyValue)
-        frequencyValue[i] = 0;
+      if (frequencyValue[index][i] < minFrequencyValue)
+        frequencyValue[index][i] = map(frequencyValue[index][i],0,150,0,60);
 
-      if (frequencyValue[i] > maxFrequencyValue)
-        frequencyValue[i] = maxFrequencyValue;
+        if(frequencyValue[index][i] < 20 || getVolume() < 50)
+            frequencyValue[index][i] = 0;
     }
-  }
+
+
+
   isFiltered = true;
 }
 
@@ -111,7 +148,7 @@ void msgeq7::measureFrequency(byte frequencyNumber)
 {
   digitalWrite (msg7StrobePort, LOW);
   delayMicroseconds(outputSettlingTime * 2);
-  frequencyValue[frequencyNumber] = analogRead(msg7AnalogInputPort);;
+  frequencyValue[index][frequencyNumber] = analogRead(msg7AnalogInputPort);;
 }
 
 void msgeq7::chanceFrequency()

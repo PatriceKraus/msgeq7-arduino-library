@@ -13,7 +13,7 @@ msgeq7	KEYWORD1
 readFrequencies				KEYWORD2
 getFrequency				KEYWORD2
 getFrequencyVoltage			KEYWORD2
-filter						KEYWORD2
+setFilterProgramm			KEYWORD2
 getVolume					KEYWORD2
 getNumberOfFrequencies		KEYWORD2
 setNumberOfFrequencies		KEYWORD2
