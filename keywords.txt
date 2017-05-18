@@ -17,5 +17,7 @@ setFilterProgramm			KEYWORD2
 getVolume					KEYWORD2
 getNumberOfFrequencies		KEYWORD2
 setNumberOfFrequencies		KEYWORD2
+getMaxFrequencyValue		KEYWORD2
+getMinFrequencyValue		KEYWORD2
 
 

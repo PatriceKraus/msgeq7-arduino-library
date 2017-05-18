@@ -45,10 +45,15 @@ public:
 
     int getFrequency(byte frequencyNumber);
     int getFrequency(String frequency);
+    int getMaxFrequency();
+    int getMinFrequency();
+
+    
     double getFrequencyVoltage(byte frequencyNumber);
     int getVolume();
     byte getNumberOfFrequencies();
     void setNumberOfFrequencies(byte newCount);
     void setFilterProgramm(byte number);
+
 };
 #endif

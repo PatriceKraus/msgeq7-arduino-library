@@ -27,6 +27,27 @@ msgeq7::msgeq7(byte strobePort ,byte resetPort,byte inputPort)
   }
 }
 
+int msgeq7::getMaxFrequency()
+{
+  int tmp =0;
+  for (size_t i = 0; i < numberOfFrequencies; i++)
+  {
+    tmp = max(frequencyValue[index][i],tmp);
+  }
+  return tmp;
+}
+
+int msgeq7::getMinFrequency()
+{
+  int tmp=maxFrequencyValue;
+  for (size_t i = 0; i < numberOfFrequencies; i++)
+  {
+    tmp = min(frequencyValue[index][i],tmp);
+  }
+  return tmp;
+}
+
+
 byte msgeq7::getNumberOfFrequencies()
 {
   return numberOfFrequencies;
