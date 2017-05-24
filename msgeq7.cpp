@@ -11,6 +11,7 @@ msgeq7::msgeq7(byte strobePort ,byte resetPort,byte inputPort)
   this->currentlyFilterProgramm = 0;
   this->diffValueForExpFloatAvg = 0;
   this->index = 0;
+  this->intervalVerlaufNonlinearLED = (minFrequencyValue * log10(2)) / (log10(minFrequencyValue));
 
 
   pinMode(msg7ResetPort, OUTPUT);
@@ -94,6 +95,15 @@ int msgeq7::getFrequency(byte frequencyNumber)
   }
 }
 
+double msgeq7::getRelativeFrequency(byte frequencyNumber)
+{
+  if(isInitialized)
+  {
+    return (double)frequencyValue[index][frequencyNumber]/getVolume();
+  }
+  return 0;
+}
+
 double msgeq7::getFrequencyVoltage(byte frequencyNumber)
 {
   return (double)frequencyValue[index][frequencyNumber] * 5 / 1023;
@@ -101,57 +111,77 @@ double msgeq7::getFrequencyVoltage(byte frequencyNumber)
 
 int msgeq7::getVolume()
 {
-  int vol = frequencyValue[index][0];
-  for(int i = 1; i< numberOfFrequencies;i++)
-    vol += frequencyValue[index][i];
+  int vol = 1;
+  byte freqWithVolume = 1;
+  for(int i = 0; i< numberOfFrequencies;i++)
+  {
+    if(frequencyValue[index][i] > minFrequencyValue/2)
+      {
+        vol += frequencyValue[index][i];
+        freqWithVolume++;
+      }
 
-  return vol/numberOfFrequencies;
+  }
+  int avg =  vol/freqWithVolume;
+  return (avg+getMaxFrequency())/2;
+}
+
+void msgeq7::exponentialFloatingAverageFilter()
+{
+  for(int i = 0; i< numberOfFrequencies;i++)
+  {
+    int tmp =0;
+    for (size_t j = 1; j < floatingAverageLenght; j++)
+    {
+     tmp += frequencyValue[(index-j)%floatingAverageLenght][i]*(floatingAverageLenght-j);
+    }
+    frequencyValue[index][i] = (tmp+ (frequencyValue[index][i]*floatingAverageLenght))/diffValueForExpFloatAvg;
+  }
+}
+
+void msgeq7::lowValueReductionFilter()
+{
+  for(int i = 0; i< numberOfFrequencies;i++)
+  {
+    if(frequencyValue[index][i] <= minFrequencyValue)
+    {
+      int tmp = frequencyValue[index][i] - abs(frequencyValue[index][i]-minFrequencyValue);
+      if(tmp > 0)
+        frequencyValue[index][i] = tmp;
+      else
+        frequencyValue[index][i] = 0;
+    }
+  }
+}
+
+void msgeq7::removeLowValuesAfterFilter()
+{
+  for (int i = 0; i < numberOfFrequencies; i++)
+  {
+    if (frequencyValue[index][i] <= minFrequencyValue/2 )
+      frequencyValue[index][i] = 0;
+  }
 }
 
 void msgeq7::filter()
 {
-
-/*
-  for (int i = 0; i < numberOfFrequencies; i++)
-  {
-    if (frequencyValue[index][i] < minFrequencyValue)
-      frequencyValue[index][i] = 0;
-
-    if (frequencyValue[index][i] > maxFrequencyValue)
-      frequencyValue[index][i] = maxFrequencyValue;
-  }
-*/
     switch(currentlyFilterProgramm)
     {
-        case 1: //exponential floating average
-          for(int i = 0; i< numberOfFrequencies;i++)
-          {
-            int tmp =0;
-            for (size_t j = 1; j < floatingAverageLenght; j++)
-            {
-             tmp += frequencyValue[(index-j)%floatingAverageLenght][i]*(floatingAverageLenght-j);
-            }
-            frequencyValue[index][i] = (tmp+ (frequencyValue[index][i]*floatingAverageLenght))/diffValueForExpFloatAvg;
-          }
+        case 1:
+          exponentialFloatingAverageFilter();
+        break;
+        case 2:
+          lowValueReductionFilter();
+          exponentialFloatingAverageFilter();
+          removeLowValuesAfterFilter();
         break;
         default: //Programm Zero, don't manipulate the values
         break;
-
     }
-
-    for (int i = 0; i < numberOfFrequencies; i++)
-    {
-      if (frequencyValue[index][i] < minFrequencyValue)
-        frequencyValue[index][i] = map(frequencyValue[index][i],0,150,0,60);
-
-        if(frequencyValue[index][i] < 20 || getVolume() < 50)
-            frequencyValue[index][i] = 0;
-    }
-
-
-
   isFiltered = true;
 }
+
+
 
 void msgeq7::reset()
 {

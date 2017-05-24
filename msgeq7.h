@@ -19,41 +19,48 @@
 class msgeq7
 {
 private:
-      byte numberOfFrequencies;
-      byte msg7AnalogInputPort;
-      byte msg7ResetPort;
-      byte msg7StrobePort;
-      byte index;
-      int diffValueForExpFloatAvg;
 
-      byte currentlyFilterProgramm;
+  void reset();
+  void measureFrequency(byte frequencyNumber);
+  void chanceFrequency();
+  void filter();
 
-      boolean isInitialized;
-      boolean isFiltered;
-      int frequencyValue[floatingAverageLenght][maxNumberOfFrequencies];
+  void exponentialFloatingAverageFilter();
+  void lowValueReductionFilter();
+  void removeLowValuesAfterFilter();
 
+  boolean isInitialized;
+  boolean isFiltered;
 
-      void reset();
-      void measureFrequency(byte frequencyNumber);
-      void chanceFrequency();
-      void filter();
+  byte numberOfFrequencies;
+  byte msg7AnalogInputPort;
+  byte msg7ResetPort;
+  byte msg7StrobePort;
+  byte index;
+  byte currentlyFilterProgramm;
+  int diffValueForExpFloatAvg;
+  int frequencyValue[floatingAverageLenght][maxNumberOfFrequencies];
+
+  float intervalVerlaufNonlinearLED;
+
 
 public:
     msgeq7(byte strobePort ,byte resetPort,byte inputPort);
 
     void readFrequencies();
+    void setNumberOfFrequencies(byte newCount);
+    void setFilterProgramm(byte number);
+
+    byte getNumberOfFrequencies();
 
     int getFrequency(byte frequencyNumber);
     int getFrequency(String frequency);
     int getMaxFrequency();
     int getMinFrequency();
-
-    
-    double getFrequencyVoltage(byte frequencyNumber);
     int getVolume();
-    byte getNumberOfFrequencies();
-    void setNumberOfFrequencies(byte newCount);
-    void setFilterProgramm(byte number);
+
+    double getRelativeFrequency(byte frequencyNumber);
+    double getFrequencyVoltage(byte frequencyNumber);
 
 };
 #endif
